@@ -166,8 +166,9 @@
     const seen = new Map();
     return events.filter(event => {
       const dateKey = event.startDate.toISOString().slice(0, 10);
+      const timeKey = event.isAllDay ? 'allday' : event.startDate.getTime();
       const titleKey = event.title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
-      const key = `${dateKey}|${titleKey}`;
+      const key = `${dateKey}|${timeKey}|${titleKey}`;
       if (seen.has(key)) return false;
       seen.set(key, true);
       return true;
@@ -258,10 +259,12 @@
             }
 
             // Extract title using context-aware extraction
-            const title = extractTitle(lines, lineIdx, match[0]);
+            let title = extractTitle(lines, lineIdx, match[0]);
 
-            // Skip if no meaningful title found
-            if (!title || isNoise(title)) continue;
+            // Fallback if no meaningful title found
+            if (!title || isNoise(title)) {
+              title = "Event";
+            }
 
             found.push({
               date: date,
@@ -323,10 +326,12 @@
         let endDate = result.end ? result.end.date() : inferEndDate(startDate, hasTime);
 
         // Extract title with context awareness
-        const title = extractTitle(lines, lineIdx, result.text);
+        let title = extractTitle(lines, lineIdx, result.text);
 
-        // Skip if no meaningful title
-        if (!title || isNoise(title)) continue;
+        // Fallback if no meaningful title
+        if (!title || isNoise(title)) {
+          title = "Event";
+        }
 
         const location = extractLocation(line);
 
@@ -411,8 +416,20 @@
       }
     }
 
-    // Final filtering: remove events with no real title
-    events = events.filter(e => e.title && e.title.length >= 2 && !isNoise(e.title));
+    // Fallback for any missing titles to use the line description
+    events.forEach(e => {
+      if (!e.title || e.title.length < 2 || isNoise(e.title) || e.title === "Event") {
+        if (e.description && e.description.length > 5) {
+          // Clean the description to use as a title
+          let fallback = e.description.replace(e.rawText, '').trim();
+          fallback = fallback.replace(/^[\s\-–—:,;.•·*#>|/\\()]+/, '').trim();
+          e.title = fallback.substring(0, 50) + (fallback.length > 50 ? '...' : '');
+          if (e.title.length < 2) e.title = "Event";
+        } else {
+          e.title = "Event";
+        }
+      }
+    });
 
     // Deduplicate and sort
     events = deduplicateEvents(events);

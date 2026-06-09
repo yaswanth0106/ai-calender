@@ -189,22 +189,15 @@
         // Use improved text reconstruction
         let pageText = reconstructText(textContent);
 
-        // Also try simple concatenation as fallback comparison
-        if (!pageText || pageText.trim().length < 10) {
-          const simpleText = textContent.items
-            .map(item => item.str)
-            .join(' ')
-            .replace(/\s{2,}/g, ' ')
-            .trim();
-          
-          if (simpleText.length > pageText.trim().length) {
-            pageText = simpleText;
-          }
-        }
+        const simpleText = textContent.items
+          .map(item => item.str)
+          .join(' ')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
 
-        if (pageText && pageText.trim().length > 10) {
-          // Digital text found
-          fullText += `--- Page ${i} ---\n${pageText.trim()}\n\n`;
+        if ((pageText && pageText.trim().length > 10) || (simpleText && simpleText.trim().length > 10)) {
+          // Digital text found. Pass both to the parser (they will be deduplicated by date/time/title)
+          fullText += `--- Page ${i} ---\n${pageText.trim()}\n\n${simpleText}\n\n`;
         } else {
           // Scanned page — try OCR if Tesseract is available
           if (typeof Tesseract !== 'undefined') {
