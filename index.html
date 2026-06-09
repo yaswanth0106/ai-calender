@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CalScan — Upload a photo or PDF, automatically extract dates & events, and add them to your Apple Calendar with one tap." />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CalScan" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="CalScan — Smart Event Scanner" />
+  <meta property="og:description" content="Scan documents, extract events, add to Apple Calendar instantly." />
+  <meta property="og:type" content="website" />
+
+  <title>CalScan — Smart Event Scanner for Apple Calendar</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ═══ Header ═══ -->
+    <header class="header">
+      <span class="header__logo">📸</span>
+      <h1 class="header__title">CalScan</h1>
+      <p class="header__subtitle">Upload a photo or PDF — we'll find every event and add it to your calendar</p>
+    </header>
+
+    <!-- ═══ Upload Zone ═══ -->
+    <div class="upload-zone" id="upload-zone">
+      <span class="upload-zone__icon">📄</span>
+      <div class="upload-zone__text">
+        <strong>Drop your file here</strong> or tap to browse
+      </div>
+      <div class="upload-zone__formats">
+        Supports JPG, PNG, WEBP, GIF, BMP &nbsp;·&nbsp; PDF
+      </div>
+      <input type="file" id="file-input" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp,.tiff,.tif,.pdf,image/*,application/pdf" />
+    </div>
+
+    <!-- ═══ Processing ═══ -->
+    <div class="processing" id="processing">
+      <div class="processing__steps">
+        <div class="processing__step" id="step-scan">
+          <span class="processing__step-icon">1</span>
+          <span>Scanning</span>
+        </div>
+        <div class="processing__step-connector"></div>
+        <div class="processing__step" id="step-extract">
+          <span class="processing__step-icon">2</span>
+          <span>Extracting</span>
+        </div>
+        <div class="processing__step-connector"></div>
+        <div class="processing__step" id="step-parse">
+          <span class="processing__step-icon">3</span>
+          <span>Parsing</span>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-bar__fill" id="progress-fill"></div>
+      </div>
+      <div class="processing__status" id="processing-status">Preparing...</div>
+    </div>
+
+    <!-- ═══ Extracted Text Preview (debug) ═══ -->
+    <div class="extracted-text" id="extracted-text" style="display:none;">
+      <div class="events__header" style="margin-bottom:0.75rem;">
+        <h2 class="events__title" style="font-size:1rem;">📝 Extracted Text</h2>
+        <button class="btn btn--secondary btn--small" id="toggle-text-btn" onclick="document.getElementById('text-preview').style.display = document.getElementById('text-preview').style.display === 'none' ? 'block' : 'none'">Toggle</button>
+      </div>
+      <pre id="text-preview" style="display:none; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:1rem; font-size:0.78rem; color:#94a3b8; max-height:200px; overflow-y:auto; white-space:pre-wrap; word-break:break-word; font-family:'Inter',monospace;"></pre>
+    </div>
+
+    <!-- ═══ Events Section ═══ -->
+    <section class="events" id="events-section">
+      <div class="events__header">
+        <h2 class="events__title">Detected Events</h2>
+        <span class="events__count" id="events-count">0 events</span>
+      </div>
+      <div class="events__list" id="events-list">
+        <!-- Event cards rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ═══ Action Bar ═══ -->
+    <div class="action-bar" id="action-bar">
+      <button class="btn btn--primary btn--large" id="add-all-btn">
+        <span>📅</span> Add All to Calendar
+      </button>
+      <button class="btn btn--secondary btn--large" id="download-btn">
+        <span>📥</span> Download .ics
+      </button>
+      <button class="btn btn--secondary btn--large" id="new-scan-btn">
+        <span>🔄</span> New Scan
+      </button>
+    </div>
+
+    <!-- ═══ Shortcut Banner ═══ -->
+    <a class="shortcut-banner" href="shortcut-guide.html">
+      <span class="shortcut-banner__icon">📱</span>
+      <div class="shortcut-banner__text">
+        <div class="shortcut-banner__title">Set Up iPhone Shortcut</div>
+        <div class="shortcut-banner__desc">Create a one-tap shortcut to scan events on the go</div>
+      </div>
+      <span class="shortcut-banner__arrow">→</span>
+    </a>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="footer">
+      <p>CalScan — Scan. Extract. Schedule. &nbsp;·&nbsp; Made with ❤️ for productivity</p>
+    </footer>
+
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ═══ Libraries ═══ -->
+
+  <!-- Tesseract.js v5 — OCR Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Library loader — loads chrono-node and PDF.js via ESM dynamic imports -->
+  <script>
+    // Global readiness promise — app.js waits for this before processing
+    window.__libsReady = (async function loadLibraries() {
+      const results = { chrono: false, pdfjs: false };
+
+      // Load chrono-node via esm.sh (it has no pre-built browser bundle)
+      try {
+        const chronoModule = await import('https://esm.sh/chrono-node@2.7.7');
+        window.chrono = chronoModule.default || chronoModule;
+        results.chrono = true;
+        console.log('✅ chrono-node loaded');
+      } catch (e) {
+        console.error('❌ chrono-node failed to load:', e);
+        // Fallback: try alternative CDN
+        try {
+          const chronoModule2 = await import('https://cdn.jsdelivr.net/npm/chrono-node@2.7.7/+esm');
+          window.chrono = chronoModule2.default || chronoModule2;
+          results.chrono = true;
+          console.log('✅ chrono-node loaded (fallback)');
+        } catch (e2) {
+          console.error('❌ chrono-node fallback also failed:', e2);
+        }
+      }
+
+      // Load PDF.js
+      try {
+        const pdfjsModule = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs');
+        window.pdfjsLib = pdfjsModule;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs';
+        results.pdfjs = true;
+        console.log('✅ PDF.js loaded');
+      } catch (e) {
+        console.error('❌ PDF.js failed to load:', e);
+      }
+
+      console.log('📦 Library load results:', results);
+      return results;
+    })();
+  </script>
+
+  <!-- App Modules (order matters: dependencies first) -->
+  <script src="js/icons.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

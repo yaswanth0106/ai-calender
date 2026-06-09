@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Step-by-step guide to create an iPhone Shortcut for CalScan — one-tap document scanning to Apple Calendar." />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Create Your CalScan Shortcut — iOS Setup Guide</title>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #0a0a0f;
+      color: #e2e8f0;
+      line-height: 1.6;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px; height: 600px;
+      top: -150px; right: -150px;
+      background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      width: 500px; height: 500px;
+      bottom: -100px; left: -100px;
+      background: radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Back Link ─── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #6366f1;
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      margin-bottom: 1.5rem;
+    }
+    .back-link:hover { color: #8b5cf6; gap: 0.6rem; }
+    .back-link__arrow { font-size: 1.1rem; transition: transform 0.2s; }
+    .back-link:hover .back-link__arrow { transform: translateX(-3px); }
+
+    /* ─── Header ─── */
+    .header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .header__icon { font-size: 3rem; display: block; margin-bottom: 0.75rem; }
+    .header__title {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.25;
+    }
+    .header__subtitle {
+      color: #94a3b8;
+      font-size: 1rem;
+      margin-top: 0.6rem;
+      max-width: 440px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ─── Cards ─── */
+    .card {
+      background: rgba(255,255,255,0.035);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      animation: fade-in-up 0.5s ease both;
+    }
+    .card--highlight {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06));
+      border-color: rgba(99,102,241,0.15);
+    }
+
+    .card__title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card__title-icon { font-size: 1.2rem; }
+
+    /* ─── Prerequisites ─── */
+    .prereq-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .prereq-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+    .prereq-list li::before {
+      content: '✓';
+      color: #10b981;
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(16,185,129,0.15);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ─── Step Cards ─── */
+    .step {
+      background: rgba(255,255,255,0.035);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 1.5rem;
+      padding-left: 1.75rem;
+      margin-bottom: 1rem;
+      border-left: 3px solid;
+      border-image: linear-gradient(180deg, #6366f1, #8b5cf6) 1;
+      transition: all 0.3s ease;
+      animation: fade-in-up 0.5s ease both;
+    }
+
+    .step:nth-child(1) { animation-delay: 0.05s; }
+    .step:nth-child(2) { animation-delay: 0.10s; }
+    .step:nth-child(3) { animation-delay: 0.15s; }
+    .step:nth-child(4) { animation-delay: 0.20s; }
+    .step:nth-child(5) { animation-delay: 0.25s; }
+    .step:nth-child(6) { animation-delay: 0.30s; }
+
+    .step:hover {
+      border-color: rgba(255,255,255,0.1);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+    }
+
+    .step__header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .step__number {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step__title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .step__icon {
+      font-size: 1.3rem;
+      margin-left: auto;
+    }
+
+    .step__body {
+      padding-left: 2.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .step__text {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      line-height: 1.55;
+    }
+
+    .step__hint {
+      font-size: 0.82rem;
+      color: #64748b;
+      font-style: italic;
+    }
+
+    /* ─── Alternative Section ─── */
+    .alt-section {
+      animation-delay: 0.35s;
+    }
+
+    .alt-steps {
+      list-style: none;
+      counter-reset: alt-step;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+    }
+
+    .alt-steps li {
+      counter-increment: alt-step;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.88rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .alt-steps li::before {
+      content: counter(alt-step);
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(99,102,241,0.15);
+      color: #a78bfa;
+      font-weight: 700;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .alt-note {
+      margin-top: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.15);
+      border-radius: 10px;
+      font-size: 0.83rem;
+      color: #34d399;
+      line-height: 1.5;
+    }
+
+    /* ─── Tips ─── */
+    .tips-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .tip {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      font-size: 0.88rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .tip__icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      margin-top: 2.5rem;
+      padding: 1.5rem 0;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .footer a {
+      color: #6366f1;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .footer a:hover { color: #8b5cf6; }
+    .footer__heart {
+      display: block;
+      margin-top: 0.5rem;
+      color: #334155;
+      font-size: 0.8rem;
+    }
+
+    /* ─── Animations ─── */
+    @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 640px) {
+      .container { padding: 1rem; }
+      .header__title { font-size: 1.8rem; }
+      .step__body { padding-left: 0; margin-top: 0.5rem; }
+      .step__header { gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Back Link -->
+    <a href="index.html" class="back-link">
+      <span class="back-link__arrow">←</span>
+      Back to CalScan
+    </a>
+
+    <!-- Header -->
+    <header class="header">
+      <span class="header__icon">📱</span>
+      <h1 class="header__title">Create Your CalScan Shortcut</h1>
+      <p class="header__subtitle">Set up a one-tap workflow on your iPhone to scan documents and add events to your calendar</p>
+    </header>
+
+    <!-- Prerequisites -->
+    <div class="card" style="animation-delay: 0.02s;">
+      <div class="card__title">
+        <span class="card__title-icon">📋</span>
+        Prerequisites
+      </div>
+      <ul class="prereq-list">
+        <li>iPhone running iOS 15 or later</li>
+        <li>Shortcuts app installed (comes pre-installed)</li>
+        <li>Camera access enabled for photo scanning</li>
+      </ul>
+    </div>
+
+    <!-- Steps -->
+    <h2 style="font-size: 1.15rem; font-weight: 700; color: #e2e8f0; margin: 2rem 0 1rem; padding-left: 0.25rem;">Step-by-Step Guide</h2>
+
+    <div class="step">
+      <div class="step__header">
+        <span class="step__number">1</span>
+        <span class="step__title">Open Shortcuts App</span>
+        <span class="step__icon">📱</span>
+      </div>
+      <div class="step__body">
+        <p class="step__text">Open the <strong>Shortcuts</strong> app on your iPhone. It has a blue and pink icon with overlapping squares.</p>
+        <p class="step__hint">Can't find it? Swipe down on your home screen and search for "Shortcuts"</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step__header">
+        <span class="step__number">2</span>
+        <span class="step__title">Create New Shortcut</span>
+        <span class="step__icon">➕</span>
+      </div>
+      <div class="step__body">
+        <p class="step__text">Tap the <strong>"+"</strong> button in the top-right corner to create a new shortcut.</p>
+        <p class="step__text">You'll see a blank shortcut editor ready for actions.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step__header">
+        <span class="step__number">3</span>
+        <span class="step__title">Add Photo Action</span>
+        <span class="step__icon">📸</span>
+      </div>
+      <div class="step__body">
+        <p class="step__text">Tap <strong>"Add Action"</strong> and search for <strong>"Take Photo"</strong> or <strong>"Select Photos"</strong>.</p>
+        <p class="step__text">Choose <strong>"Take Photo"</strong> to capture documents with your camera, or <strong>"Select Photos"</strong> to pick from your library.</p>
+        <p class="step__hint">Tip: "Take Photo" is faster for scanning documents on the go</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step__header">
+        <span class="step__number">4</span>
+        <span class="step__title">Add "Open URL" Action</span>
+        <span class="step__icon">🌐</span>
+      </div>
+      <div class="step__body">
+        <p class="step__text">Search for the <strong>"Open URLs"</strong> action and add it below the photo action.</p>
+        <p class="step__text">In the URL field, enter the web address where CalScan is hosted (or your local URL).</p>
+        <p class="step__hint">This will open CalScan in Safari where you can process the captured photo</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step__header">
+        <span class="step__number">5</span>
+        <span class="step__title">Name Your Shortcut</span>
+        <span class="step__icon">✏️</span>
+      </div>
+      <div class="step__body">
+        <p class="step__text">Tap the <strong>dropdown arrow ▼</strong> at the top of the editor and select <strong>"Rename"</strong>.</p>
+        <p class="step__text">Name it <strong>"CalScan"</strong> or <strong>"Scan Events"</strong>.</p>
+        <p class="step__text">Tap <strong>"Choose Icon"</strong> and pick a calendar emoji 📅 for easy recognition.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step__header">
+        <span class="step__number">6</span>
+        <span class="step__title">Add to Home Screen</span>
+        <span class="step__icon">🏠</span>
+      </div>
+      <div class="step__body">
+        <p class="step__text">Tap the <strong>dropdown arrow ▼</strong> again and select <strong>"Add to Home Screen"</strong>.</p>
+        <p class="step__text">This creates an app-like icon on your home screen for <strong>one-tap access</strong>!</p>
+        <p class="step__hint">Your CalScan shortcut will appear alongside your other apps</p>
+      </div>
+    </div>
+
+    <!-- Alternative: Web App -->
+    <div class="card card--highlight alt-section" style="margin-top: 2rem; animation-delay: 0.35s;">
+      <div class="card__title">
+        <span class="card__title-icon">⚡</span>
+        Even Easier: Use CalScan as a Web App
+      </div>
+      <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.75rem;">
+        You don't even need a Shortcut! Just add CalScan directly to your Home Screen:
+      </p>
+      <ol class="alt-steps">
+        <li>Open CalScan in <strong style="color: #e2e8f0;">Safari</strong> on your iPhone</li>
+        <li>Tap the <strong style="color: #e2e8f0;">Share button</strong> (the square with an arrow pointing up)</li>
+        <li>Scroll down and tap <strong style="color: #e2e8f0;">"Add to Home Screen"</strong></li>
+        <li>CalScan will work like a native app — no App Store needed!</li>
+      </ol>
+      <div class="alt-note">
+        💡 When you download the .ics file, Safari will automatically open the native <strong>"Add to Calendar"</strong> dialog — no extra steps needed.
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="card" style="margin-top: 1.5rem; animation-delay: 0.4s;">
+      <div class="card__title">
+        <span class="card__title-icon">💡</span>
+        Tips for Best Results
+      </div>
+      <div class="tips-grid">
+        <div class="tip">
+          <span class="tip__icon">📐</span>
+          <span>Hold your phone <strong>parallel</strong> to the document for a straight capture</span>
+        </div>
+        <div class="tip">
+          <span class="tip__icon">💡</span>
+          <span>Ensure <strong>good lighting</strong> — avoid shadows and glare on the document</span>
+        </div>
+        <div class="tip">
+          <span class="tip__icon">🔍</span>
+          <span>Make sure text is <strong>sharp and in focus</strong> before capturing</span>
+        </div>
+        <div class="tip">
+          <span class="tip__icon">📄</span>
+          <span>For multi-page documents, use <strong>PDF format</strong> for best results</span>
+        </div>
+        <div class="tip">
+          <span class="tip__icon">🗓️</span>
+          <span>Standard date formats work best — e.g., <strong>"June 15, 2026"</strong> or <strong>"15/06/2026"</strong></span>
+        </div>
+        <div class="tip">
+          <span class="tip__icon">🕐</span>
+          <span>Include <strong>times</strong> when possible — e.g., <strong>"Meeting at 3:00 PM"</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <a href="index.html">← Back to CalScan</a>
+      <span class="footer__heart">Made with ❤️ for productivity</span>
+    </footer>
+
+  </div>
+
+</body>
+</html>
